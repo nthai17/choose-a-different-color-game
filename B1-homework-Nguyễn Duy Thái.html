@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework - CI/B1</title>
+    <style>
+        h1{
+            text-align: center;
+        }
+        #root{
+            display: grid;
+            grid-template-columns: 200px 200px 200px;
+            grid-template-rows: 200px 200px 200px;
+            padding: 0 20px 20px;
+            width: 620px;
+            margin: 0 auto;
+            gap: 10px;
+        }
+        .box-special{
+            opacity: 0.8 !important;
+        }
+        #time{
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 40px;
+        }
+        #start-btn{
+            margin: 4px 50% ;
+            transform: translateX(-50%);
+            height: 36px;
+            width: 72px;
+            background-color: azure;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Game - Chọn đúng 4 lần để chiến thắng nhé!</h1>
+    <button id="start-btn" onclick="startGame()">Start</button>
+    <div id="time"></div>
+    <div id="root">
+    </div>
+    <script>
+        // I. Logic
+        // P1 - ROT13
+        let x = function rot13(str){
+            const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+            let rot13String = str.toUpperCase();
+            let rot13Arr = [...rot13String]
+            let output = [];
+            rot13Arr.forEach((x)=>{
+                let index = alphabet.indexOf(x)
+                if(index > 13){
+                    output.push(alphabet[index-13])
+                }
+                output.push(alphabet[index+13])
+            })
+            return output.join('')
+        }
+        console.log(x('hello'));
+        
+        // P2 - Distance to Nearest Vowel
+        let v = function nearestVowel(str){
+            let arr = [...str];
+            let vowel = ['a','e','i','o','u']
+            // khai báo mảng các khoảng cách của mỗi phần tử tới nguyên âm gần nhất
+            let output = []
+            // khai báo mảng chứa vị trí của các nguyên âm trong chuỗi đầu vào
+            let vowelIndex = []
+            // lấy vị trí của các nguyên âm trong chuỗi đầu vào
+            arr.forEach((letter, index)=>{
+                if(vowel.includes(letter)){
+                    vowelIndex.push(index)
+                }
+            })
+            // duyệt mảng để lấy khoảng cách của mỗi phần tử tới nguyên âm gần nhất
+            arr.forEach((x, index)=>{
+                // nếu là nguyên âm thì khoảng cách = 0
+                if(vowel.includes(x)){
+                    output.push(0)
+                } 
+                // nếu không là nguyên âm thì tính khoảng cách tới các nguyên âm và lấy khoảng cách min
+                else {
+                    let distance = vowelIndex.map((item)=>{
+                        return Math.abs(item - index)
+                    })
+                    let minDistanceToVowel = Math.min(...distance)
+                    output.push(minDistanceToVowel)
+                }
+            })
+            return output
+        }
+        console.log(v('shopper'));
+
+        // P3 - Pig Latin
+        let l = function lating(str){
+            // khai báo mảng để chưa các phụ âm tính từ đầu chuỗi
+            let consonant = []
+            let arr = [...str.toLowerCase()];
+            let vowel = ['a','e','i','o','u']
+            let output;
+            // nếu đầu chuỗi là nguyên âm thì có output là chuỗi ban đầu thêm 'way' vào cuối luôn
+            if (vowel.includes(arr[0])){
+                arr.push('way')
+                output = arr.join('')
+            } 
+            // nếu đầu chuỗi không phải là nguyên âm (là phụ âm) thì lấy phụ âm đó để chuyển xuống cuối và thêm 'ay'
+            else {
+                consonant.push(arr[0])
+                arr.splice(0, 1)
+                // kiểm tra xem có cụm phụ âm hay không, nếu kí tự liền kề là phụ âm thì thêm tiếp vào mảng consonant
+                // nếu kí tự liền kề là nguyên âm thì dừng, cắt phần phụ âm ở đầu đi
+                for(let i=0; i<arr.length; i++){
+                    if (!vowel.includes(arr[i])){
+                        consonant.push(arr[i])
+                    } else {
+                        arr.splice(0, i)
+                        break
+                    }
+                }
+                output = [...arr, ...consonant, 'ay'].join('')
+            }
+            return output
+        }
+        console.log(l('algorithm'));
+
+        // II. Application
+        // khai báo thời gian 1 vòng
+        let total = 10
+        // khai báo biến nhận hàm đếm ngược
+        let timeFunc;
+        // khai báo biến lưu số lần qua màn
+        let timeToWin = 0;
+        const root = document.getElementById('root')
+        const time = document.getElementById('time')
+        time.innerHTML = total
+        // khai báo mảng các mầu chính
+        const mainColor = ['#08b5b5', '#cbac2a', '#2acb33', '#402acb']
+
+        // app game
+        const app = {
+            // vị trí màu item đặc biệt lần đầu
+            specialIndex:  Math.floor(Math.random()*9),
+            // vị trí màu chính lần đầu
+            mainColorIndex: Math.floor(Math.random()*mainColor.length),
+            // hàm khởi chạy chính
+            start(){
+                this.renderItem(),
+                this.loadMainColor(),
+                this.loadSpecial(),
+                this.handleEvent()
+            },
+
+            // hàm hiển thị ra game
+            renderItem(){
+                let arr = []
+                for (i=0; i<9; i++){
+                    let arrItem = {}
+                    arrItem.id = i;
+                    arr.push(arrItem)
+                }
+                let html = arr.map(function(item){
+                    return `<div class="box-item" id="item-${item.id}"></div>`
+                })
+                root.innerHTML = html.join('')
+                let im
+            },
+            // hàm hiển thị màu chính mỗi vòng
+            loadMainColor(){
+                const listItem = document.querySelectorAll('.box-item')
+                listItem.forEach((item)=>{
+                    item.style.backgroundColor = `${mainColor[this.mainColorIndex]}`
+                })
+            },
+
+            // hàm hiển thị màu cho item đặc biệt
+            loadSpecial(){
+                const currentItem = document.querySelector('.box-special')
+                if(currentItem){
+                    currentItem.classList.remove('box-special')
+                }
+                const listItem = document.querySelectorAll('.box-item')
+                listItem[this.specialIndex].classList.add('box-special')
+            },
+
+            // hàm đếm lùi thời gian
+            reduceTime(){
+                time.innerHTML = total
+                timeFunc = setInterval(()=>{
+                    if(total > 0){
+                        total = total - 1
+                        time.innerHTML = total
+                    }
+                    if (total <= 0) {
+                    clearInterval(timeFunc)
+                    alert('Bạn đã thua')
+                    timeToWin = 0
+                    }
+                }, 1000)
+            },
+
+            // hàm xử lý khi click đúng để qua cửa :D
+            nextDoor(){
+                clearInterval(timeFunc)
+                total = 10
+                this.reduceTime()
+                timeToWin += 1
+                if(timeToWin === 4) {
+                    alert('Bạn đã thắng')
+                    timeToWin = 0
+                    clearInterval(timeFunc)
+                    total = 10
+                    time.innerHTML = total
+                }
+            },
+
+            // hàm lắng nghe các sự kiện
+            handleEvent(){
+                root.onclick = (e)=>{
+                    let specialItem = e.target.closest('.box-special')
+                    if(specialItem){
+                        this.specialIndex = Math.floor(Math.random()*9)
+                        this.loadSpecial();
+                        do {newMainColorIndex = Math.floor(Math.random()*mainColor.length)
+                        } while (newMainColorIndex === this.mainColorIndex)
+                        this.mainColorIndex = newMainColorIndex
+                        this.loadMainColor()
+                        this.nextDoor()
+                    }
+                }
+            }
+        }
+
+        // chạy app
+        app.start()
+
+        // hàm start khi click btn
+        function startGame(){
+            // nếu click lại khi đã thua thì set lại thời gian
+            if(total === 0){
+                total = 10
+            }
+            // bắt đầu chơi thì chạy hàm đếm lùi
+            app.reduceTime()
+        }
+    </script>
+</body>
+</html>
