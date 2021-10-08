@@ -52,14 +52,14 @@
             let output = [];
             rot13Arr.forEach((x)=>{
                 let index = alphabet.indexOf(x)
-                if(index > 13){
+                if(index >= 13){
                     output.push(alphabet[index-13])
                 }
                 output.push(alphabet[index+13])
             })
             return output.join('')
         }
-        console.log(x('hello'));
+        console.log(x('PUNEVMNEQ'));
         
         // P2 - Distance to Nearest Vowel
         let v = function nearestVowel(str){
@@ -228,6 +228,10 @@
                         this.mainColorIndex = newMainColorIndex
                         this.loadMainColor()
                         this.nextDoor()
+                    } else {
+                        clearInterval(timeFunc)
+                        alert('Bạn đã thua')
+                        timeToWin = 0
                     }
                 }
             }
@@ -239,7 +243,9 @@
         // hàm start khi click btn
         function startGame(){
             // nếu click lại khi đã thua thì set lại thời gian
-            if(total === 0){
+            clearInterval(timeFunc)
+            timeToWin = 0
+            if(total < 10){
                 total = 10
             }
             // bắt đầu chơi thì chạy hàm đếm lùi
